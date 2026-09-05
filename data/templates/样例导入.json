@@ -1,0 +1,36 @@
+[
+  {
+    "knowledgePoint": "综合示例",
+    "type": "SINGLE",
+    "stem": "示例单选题：培训题库系统中，题目“审核通过”后进入的状态是（ ）。",
+    "options": ["草稿", "待审核", "已上架", "已驳回"],
+    "answer": "C",
+    "analysis": "审核通过后题目即上架, 可被检索使用。",
+    "difficulty": 2
+  },
+  {
+    "knowledgePoint": "综合示例",
+    "type": "MULTIPLE",
+    "stem": "示例多选题：以下属于题库系统支持的题型有（ ）。",
+    "options": ["单选题", "多选题", "判断题", "论述作文"],
+    "answer": "A,B,C",
+    "analysis": "系统支持单选、多选、判断、简答四种题型。",
+    "difficulty": 2
+  },
+  {
+    "knowledgePoint": "综合示例",
+    "type": "JUDGE",
+    "stem": "示例判断题：已上架的题目可以被下架。",
+    "answer": "对",
+    "analysis": "管理员可将已上架题目下架。",
+    "difficulty": 1
+  },
+  {
+    "knowledgePoint": "综合示例",
+    "type": "SHORT",
+    "stem": "示例简答题：简述“生成—审核—上架”流程中审核环节的作用。",
+    "answer": "审核环节由审核员对生成的题目进行人工校验, 检查题干、选项、答案与解析的正确性与规范性, 通过后题目方可上架供检索使用, 确保题库质量。",
+    "analysis": "要点：①人工校验内容; ②通过/驳回处理; ③保证上架质量。",
+    "difficulty": 3
+  }
+]

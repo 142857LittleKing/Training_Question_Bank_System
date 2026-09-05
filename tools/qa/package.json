@@ -1,0 +1,9 @@
+{
+  "name": "tqb-ui-qa",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "puppeteer-core": "^23.11.1"
+  }
+}

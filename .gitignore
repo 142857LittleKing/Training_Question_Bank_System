@@ -1,0 +1,36 @@
+# --- Java / Maven ---
+backend/target/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+backend/.mvn/
+
+# --- Node / Vite ---
+frontend/node_modules/
+frontend/dist/
+tools/qa/node_modules/
+tools/qa/shots/
+npm-debug.log*
+
+# --- IDE ---
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# --- OS ---
+Thumbs.db
+.DS_Store
+
+# --- Local secrets / env ---
+*.local.env
+.env
+application-local.yml
+
+# --- User test data (large raw file, parsed seed kept under data/seed) ---
+/党建知识竞赛题库.pdf
+
+# --- Logs / runtime ---
+logs/
+*.log
+/shots/

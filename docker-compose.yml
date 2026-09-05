@@ -1,0 +1,60 @@
+# 培训题库系统 - 中间件(MySQL)统一 Docker 管理
+# 用法:
+#   docker compose up -d mysql        # 只启动 MySQL(开发模式)
+#   docker compose up -d --build      # 启动 MySQL + backend + web 完整环境
+services:
+  mysql:
+    image: ${MYSQL_IMAGE:-mysql:8.0}
+    container_name: tqb-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123456}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-question_bank}
+      MYSQL_USER: ${MYSQL_USER:-tqb}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-tqb123456}
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+08:00
+    ports:
+      # 本机 3306 常被占用, 默认映射到 3307, 可通过环境变量 MYSQL_PORT 修改
+      - "${MYSQL_PORT:-3307}:3306"
+    volumes:
+      - tqb_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-root123456}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: ./backend
+    container_name: tqb-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${MYSQL_DATABASE:-question_bank}
+      DB_USER: ${MYSQL_USER:-tqb}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-tqb123456}
+      QIANFAN_API_KEY: ${QIANFAN_API_KEY:-}
+      QIANFAN_MODEL: ${QIANFAN_MODEL:-ernie-4.0-turbo-8k}
+      AI_PROVIDER: ${AI_PROVIDER:-auto}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+
+  web:
+    build: ./frontend
+    container_name: tqb-web
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${WEB_PORT:-8088}:80"
+
+volumes:
+  tqb_mysql_data:
