@@ -5,6 +5,7 @@ import com.questionbank.common.PageResult;
 import com.questionbank.common.enums.QuestionSource;
 import com.questionbank.common.enums.QuestionStatus;
 import com.questionbank.common.enums.QuestionType;
+import com.questionbank.dto.QuestionDtos;
 import com.questionbank.dto.QuestionDtos.QuestionPayload;
 import com.questionbank.dto.QuestionDtos.QuestionQuery;
 import com.questionbank.dto.QuestionDtos.QuestionView;
@@ -58,6 +59,15 @@ public class QuestionController {
     public ApiResponse<Void> delete(@PathVariable Long id) {
         questionService.delete(id);
         return ApiResponse.ok();
+    }
+
+    /**
+     * 批量删除: 管理员任意; 出题员仅本人录入且非"已上架/待审核"的题。
+     * 逐条校验并返回每条的删除结果与原因, 可部分成功。
+     */
+    @PostMapping("/batch-delete")
+    public ApiResponse<QuestionDtos.BatchDeleteResult> batchDelete(@RequestBody QuestionDtos.BatchDeleteReq req) {
+        return ApiResponse.ok(questionService.batchDelete(req.ids()));
     }
 
     /** 提交审核: 草稿/AI生成/已驳回 -> 待审核 */

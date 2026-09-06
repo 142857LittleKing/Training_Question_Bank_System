@@ -19,6 +19,7 @@ export const getQuestion = (id) => http.get(`/questions/${id}`)
 export const createQuestion = (data) => http.post('/questions', data)
 export const updateQuestion = (id, data) => http.put(`/questions/${id}`, data)
 export const deleteQuestion = (id) => http.delete(`/questions/${id}`)
+export const batchDeleteQuestions = (ids) => http.post('/questions/batch-delete', { ids })
 export const submitQuestion = (id) => http.post(`/questions/${id}/submit`)
 export const offlineQuestion = (id) => http.post(`/questions/${id}/offline`)
 

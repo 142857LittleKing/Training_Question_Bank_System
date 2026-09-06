@@ -1,11 +1,14 @@
 package com.questionbank.service;
 
+import com.questionbank.auth.CurrentUser;
 import com.questionbank.auth.UserContext;
 import com.questionbank.common.BizException;
 import com.questionbank.common.PageResult;
 import com.questionbank.common.enums.QuestionSource;
 import com.questionbank.common.enums.QuestionStatus;
 import com.questionbank.common.enums.UserRole;
+import com.questionbank.dto.QuestionDtos.BatchDeleteItem;
+import com.questionbank.dto.QuestionDtos.BatchDeleteResult;
 import com.questionbank.dto.QuestionDtos.QuestionPayload;
 import com.questionbank.dto.QuestionDtos.QuestionQuery;
 import com.questionbank.dto.QuestionDtos.QuestionView;
@@ -184,22 +187,66 @@ public class QuestionService {
         return questionRepository.save(q);
     }
 
-    /** 删除(保留审核记录作为审计) */
+    /** 删除单个(角色/归属/状态校验失败时抛业务异常) */
     @Transactional
     public void delete(Long id) {
-        Question q = getRequired(id);
+        String err = deleteInternal(id);
+        if (err != null) {
+            throw BizException.bad(err);
+        }
+    }
+
+    /**
+     * 批量删除: 逐条按同一套规则校验, 可部分成功;
+     * 返回每条题目的处理结果与原因, 便于前端展示"哪些删不了、为什么"。
+     */
+    @Transactional
+    public BatchDeleteResult batchDelete(List<Long> ids) {
+        UserContext.requireRole(UserRole.GENERATOR, UserRole.ADMIN);
+        if (ids == null || ids.isEmpty()) {
+            throw BizException.bad("请选择要删除的题目");
+        }
+        List<Long> uniqueIds = ids.stream().distinct().toList();
+        if (uniqueIds.size() > 500) {
+            throw BizException.bad("单次最多批量删除 500 道题目");
+        }
+        List<BatchDeleteItem> items = new java.util.ArrayList<>();
+        int deleted = 0;
+        for (Long id : uniqueIds) {
+            String err = deleteInternal(id);
+            if (err == null) {
+                deleted++;
+                items.add(new BatchDeleteItem(id, true, null));
+            } else {
+                items.add(new BatchDeleteItem(id, false, err));
+            }
+        }
+        return new BatchDeleteResult(uniqueIds.size(), deleted, items);
+    }
+
+    /** 删除校验 + 执行: 返回 null 表示成功, 否则返回失败原因(不抛异常, 供批量场景逐条收集) */
+    private String deleteInternal(Long id) {
+        Question q = questionRepository.findById(id).orElse(null);
+        if (q == null) {
+            return "题目不存在: id=" + id;
+        }
         if (UserContext.isAdmin()) {
             questionRepository.delete(q);
-            return;
+            return null;
         }
-        UserContext.requireRole(UserRole.GENERATOR);
-        if (!q.getCreatedBy().equals(UserContext.required().getName())) {
-            throw BizException.forbidden("只能删除自己录入的题目");
+        CurrentUser cu = UserContext.required();
+        if (cu.role() != UserRole.GENERATOR) {
+            return "无删除权限, 仅出题员/管理员可删除题目 #" + id;
         }
-        if (q.getStatus() == QuestionStatus.PUBLISHED || q.getStatus() == QuestionStatus.PENDING) {
-            throw BizException.bad("上架/待审核题目需由管理员删除");
+        if (!q.getCreatedBy().equals(cu.getName())) {
+            return "只能删除自己录入的题目 #" + id;
+        }
+        QuestionStatus st = q.getStatus();
+        if (st == QuestionStatus.PUBLISHED || st == QuestionStatus.PENDING) {
+            return "已上架/待审核题目需由管理员删除 #" + id;
         }
         questionRepository.delete(q);
+        return null;
     }
 
     public QuestionView toView(Question q) {

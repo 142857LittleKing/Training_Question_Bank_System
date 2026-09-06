@@ -35,7 +35,29 @@
 
     <!-- 表格 -->
     <el-card shadow="never">
-      <el-table v-loading="loading" :data="list" stripe>
+      <!-- 批量操作工具栏 -->
+      <div v-if="canManage" class="table-toolbar">
+        <el-button
+          type="danger"
+          plain
+          :icon="Delete"
+          :disabled="!selection.length"
+          @click="onBatchDelete"
+        >
+          批量删除<template v-if="selection.length">（{{ selection.length }}）</template>
+        </el-button>
+        <span class="batch-tip">
+          支持跨页勾选: 管理员可删任意题目; 出题员仅可删本人录入且非“已上架/待审核”的题目(逐条校验, 审核记录保留作审计)
+        </span>
+      </div>
+      <el-table
+        v-loading="loading"
+        ref="tableRef"
+        :data="list"
+        stripe
+        @selection-change="onSelectionChange"
+      >
+        <el-table-column v-if="canManage" type="selection" width="46" />
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column prop="knowledgePointName" label="知识点" width="140" show-overflow-tooltip>
           <template #default="{ row }">
@@ -193,9 +215,10 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, Delete } from '@element-plus/icons-vue'
 import {
   allKnowledgePoints,
+  batchDeleteQuestions,
   deleteQuestion,
   offlineQuestion,
   pageQuestions,
@@ -301,6 +324,46 @@ onMounted(() => {
   load()
 })
 
+// ---------- 批量选择/批量删除 ----------
+const selection = ref([])
+const tableRef = ref()
+
+function onSelectionChange(rows) {
+  selection.value = rows
+}
+
+async function onBatchDelete() {
+  const ids = selection.value.map((r) => r.id)
+  if (!ids.length) return
+  try {
+    await ElMessageBox.confirm(
+      `确认批量删除选中的 ${ids.length} 道题目?\n删除后不可恢复(审核记录仍保留作审计)。`,
+      '批量删除确认',
+      { type: 'error', confirmButtonText: '删除', confirmButtonClass: 'el-button--danger' }
+    )
+  } catch (e) {
+    return
+  }
+  try {
+    const res = await batchDeleteQuestions(ids)
+    if (res.deleted > 0) {
+      ElMessage.success(`已删除 ${res.deleted}/${res.requested} 道题目`)
+    }
+    const failed = (res.items || []).filter((i) => !i.deleted)
+    if (failed.length) {
+      const reasons = [...new Set(failed.map((i) => i.reason))]
+      ElMessage.warning(
+        `${failed.length} 道未能删除: ${reasons.slice(0, 3).join('；')}${reasons.length > 3 ? ' 等' : ''}`
+      )
+    }
+    tableRef.value?.clearSelection()
+    if (list.value.length === ids.length && query.page > 1) query.page -= 1
+    load()
+  } catch (e) {
+    /* 拦截器已提示 */
+  }
+}
+
 // ---------- 行操作 ----------
 async function onSubmitReview(row) {
   try {
@@ -387,6 +450,19 @@ function answerText(q) {
 <style scoped>
 .flex-spacer {
   flex: 1;
+}
+
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.batch-tip {
+  font-size: 12px;
+  color: #909399;
 }
 
 .kp-cell {

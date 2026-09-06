@@ -6,6 +6,7 @@ import com.questionbank.common.enums.QuestionType;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
@@ -31,6 +32,18 @@ public final class QuestionDtos {
             @Min(value = 1, message = "难度1~5") @Max(value = 5, message = "难度1~5") Integer difficulty,
             Long knowledgePointId,
             @Size(max = 100, message = "知识点名称最长100字符") String knowledgePointName) {
+    }
+
+    /** 批量删除请求 */
+    public record BatchDeleteReq(@NotEmpty(message = "请选择要删除的题目") List<Long> ids) {
+    }
+
+    /** 批量删除单项结果 */
+    public record BatchDeleteItem(Long id, boolean deleted, String reason) {
+    }
+
+    /** 批量删除结果: 逐条校验, 可部分成功 */
+    public record BatchDeleteResult(int requested, int deleted, List<BatchDeleteItem> items) {
     }
 
     /** 题目列表查询参数 */

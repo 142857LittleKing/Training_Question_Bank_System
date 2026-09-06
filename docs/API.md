@@ -49,6 +49,7 @@
 | POST | /questions | GENERATOR/ADMIN | 手工录入→DRAFT, body 见题目载荷 |
 | PUT | /questions/{id} | GENERATOR/ADMIN | 编辑(上架/待审核不可编辑) |
 | DELETE | /questions/{id} | 见权限 | 管理员任意; 录入员仅本人草稿等 |
+| POST | /questions/batch-delete | GENERATOR/ADMIN | 批量删除 body {ids:[1,2]} → {requested,deleted,items:[{id,deleted,reason}]}; 逐条校验可部分成功(管理员任意, 录入员仅本人且非上架/待审核), 单次≤500 |
 | POST | /questions/{id}/submit | GENERATOR/ADMIN | 提交审核 DRAFT/GENERATED/REJECTED→PENDING |
 | POST | /questions/{id}/offline | ADMIN/REVIEWER | 下架 PUBLISHED→OFFLINE |
 
